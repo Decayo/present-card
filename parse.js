@@ -20,7 +20,8 @@
   // The text sits inside a <script> element. Either string can end it early.
   const BREAKS_SCRIPT = /<\/script|<!--/i;
   const BRANCHES = [3, 7];
-  // A node has no children, or 2 to 5. A single child folds back into its parent.
+  // Each branch of the root has 2 to 5 children; a deeper node has none, or 2 to 5.
+  // A single child folds back into its parent.
   const CHILDREN = [2, 5];
   const MAX_NODES = 40;
   const MAX_QUESTIONS = 4;
@@ -50,8 +51,8 @@
       const mark = SENTENCE_MARK.exec(plain);
       const words = countWords(plain);
       const limit = WORD_LIMITS[Math.min(node.depth, WORD_LIMITS.length - 1)];
-      if (mark) fail(line, `「${label}」有「${mark[0]}」，是句子。拆成父節點加子節點`);
-      else if (words > limit) fail(line, `「${label}」${words} 個詞，第 ${node.depth + 1} 層上限 ${limit}，是句子。拆成父節點加子節點`);
+      if (mark) fail(line, `"${label}" is a sentence: it has "${mark[0]}". Split it into a parent and its child`);
+      else if (words > limit) fail(line, `"${label}" is a sentence: ${words} words, and layer ${node.depth + 1} allows ${limit}. Split it into a parent and its child`);
       return node;
     };
 
@@ -59,7 +60,7 @@
       const line = i + 1;
       const source = raw.replace(/\t/g, '  ').trimEnd();
       if (BREAKS_SCRIPT.test(source)) {
-        fail(line, '有「</script>」或「<!--」。卡片的文字放在 <script> 裡，這兩個字串會截斷它，改寫掉');
+        fail(line, 'has "</script>" or "<!--". The text sits inside a <script> element, and either string ends it early. Reword it');
       }
       if (!source.trim()) return;
       let m;
@@ -75,18 +76,18 @@
         question = null;
       } else if ((m = /^\? (.+)$/.exec(source))) {
         const [title = '', short = '', kind = ''] = m[1].split('|').map((part) => part.trim());
-        if (!title) fail(line, '題目是空的。寫成「? 題目 | 簡稱」');
-        if (!short) fail(line, `「${title}」缺簡稱。寫成「? 題目 | 簡稱」，簡稱是回覆裡這一題的名字`);
-        if (!KINDS.has(kind)) fail(line, `「${kind}」不是題型。第三欄只能寫 單選、多選、是非，或不寫`);
+        if (!title) fail(line, 'the question is empty. Write "? 題目 | 簡稱"');
+        if (!short) fail(line, `"${title}" has no short name. Write "? 題目 | 簡稱"; the short name names this question in the answer`);
+        if (!KINDS.has(kind)) fail(line, `"${kind}" is not a question kind. The third field is 單選, 多選, 是非, or nothing`);
         question = { text: title, short, kind: KINDS.get(kind) || 'single', options: [], line };
         questions.push(question);
         heading = null;
       } else if ((m = /^hook:(.*)$/.exec(source))) {
         const url = m[1].trim();
         if (hook !== null) {
-          fail(line, '「hook:」只能有一行');
+          fail(line, 'a card has one "hook:" line');
         } else if (url && !/^https:\/\/\S+$/.test(url)) {
-          fail(line, '「hook:」後面要是 https:// 開頭的 webhookUrl，沒有就留空');
+          fail(line, '"hook:" takes an https:// webhookUrl, or nothing');
           hook = '';
         } else {
           hook = url;
@@ -95,7 +96,7 @@
         question = null;
       } else if ((m = /^ *- (.+)$/.exec(source)) && question) {
         const option = m[1].trim();
-        if (question.options.includes(option)) fail(line, `選項「${option}」重複`);
+        if (question.options.includes(option)) fail(line, `option "${option}" appears twice`);
         else question.options.push(option);
       } else if ((m = /^( *)- (.+)$/.exec(source)) && heading) {
         const indent = m[1].length;
@@ -107,27 +108,29 @@
         heading = null;
         question = null;
       } else if (/^#{3,} /.test(source)) {
-        fail(line, '心智圖只用 # 和 ##，更深的層用縮排的「- 」');
+        fail(line, 'a map uses only # and ##. Go deeper with indented "- " lines');
       } else if (/^## /.test(source)) {
-        fail(line, '看不懂這一行：「##」前面要先有一行「# 根節點」');
+        fail(line, 'cannot read this line: "##" needs a "# root" line above it');
       } else if (/^ *- /.test(source)) {
-        fail(line, '看不懂這一行：「- 」要接在 #、## 或 ? 後面');
+        fail(line, 'cannot read this line: a "- " line belongs under a #, ##, or ? line');
       } else {
-        fail(line, '看不懂這一行。每行用 #、##、- 、? 、! 或 hook: 開頭');
+        fail(line, 'cannot read this line. Start each line with #, ##, - , ? , ! or hook:');
       }
     });
 
-    if (!maps.length) fail(0, '沒有心智圖。卡片至少要一行「# 結論」');
+    if (!maps.length) fail(0, 'no mind map. A card needs at least one "# 結論" line');
 
     const checkShape = (node) => {
       const count = node.children.length;
       if (node.depth === 0 && (count < BRANCHES[0] || count > BRANCHES[1])) {
-        fail(node.line, `根節點「${node.label}」下有 ${count} 個分支，要 ${BRANCHES[0]} 到 ${BRANCHES[1]} 個`);
+        fail(node.line, `root "${node.label}" has ${count} branches; it needs ${BRANCHES[0]} to ${BRANCHES[1]}`);
       }
-      if (node.depth > 0 && count === 1) {
-        fail(node.line, `「${node.label}」只有一個子節點，把它併回這個節點`);
+      if (node.depth === 1 && count === 0) {
+        fail(node.line, `"${node.label}" has no children; a branch of the root needs ${CHILDREN[0]} to ${CHILDREN[1]}`);
+      } else if (node.depth > 0 && count === 1) {
+        fail(node.line, `"${node.label}" has a single child. Fold the child into it`);
       } else if (node.depth > 0 && count > CHILDREN[1]) {
-        fail(node.line, `「${node.label}」有 ${count} 個子節點，要 ${CHILDREN[0]} 到 ${CHILDREN[1]} 個。分成幾組`);
+        fail(node.line, `"${node.label}" has ${count} children; a node takes ${CHILDREN[0]} to ${CHILDREN[1]}. Group them`);
       }
       node.children.forEach(checkShape);
     };
@@ -135,23 +138,23 @@
     for (const map of maps) {
       checkShape(map);
       const nodes = size(map);
-      if (nodes > MAX_NODES) fail(map.line, `這張圖 ${nodes} 個節點，最多 ${MAX_NODES} 個。拆成兩張圖，或刪掉細節`);
+      if (nodes > MAX_NODES) fail(map.line, `this map has ${nodes} nodes; at most ${MAX_NODES}. Split it by topic, or drop detail`);
     }
     for (const q of questions) {
       const count = q.options.length;
       if (q.kind === 'yesno') {
-        if (count !== 2) fail(q.line, `「${q.text}」是非題要剛好 2 個選項，現在 ${count} 個`);
+        if (count !== 2) fail(q.line, `"${q.text}" is a yes-or-no question: it takes exactly 2 options, not ${count}`);
       } else if (count === 2) {
-        fail(q.line, `「${q.text}」只有 2 個選項。是非題在題目行最後加「| 是非」，不然列 ${OPTIONS[0]} 到 ${OPTIONS[1]} 個`);
+        fail(q.line, `"${q.text}" has 2 options. End a yes-or-no question's line with "| 是非"; otherwise list ${OPTIONS[0]} or ${OPTIONS[1]}`);
       } else if (count < OPTIONS[0] || count > OPTIONS[1]) {
-        fail(q.line, `「${q.text}」有 ${count} 個選項，要 ${OPTIONS[0]} 到 ${OPTIONS[1]} 個`);
+        fail(q.line, `"${q.text}" has ${count} options; it takes ${OPTIONS[0]} or ${OPTIONS[1]}`);
       }
     }
     if (questions.length && hook === null) {
-      fail(questions[0].line, '有題目就要一行「hook:」，填這個 thread 的 webhookUrl；沒有 webhookUrl 就寫「hook:」留空');
+      fail(questions[0].line, 'a card with questions needs a "hook:" line: this thread\'s webhookUrl, or "hook:" with nothing after it');
     }
     if (questions.length > MAX_QUESTIONS) {
-      fail(questions[MAX_QUESTIONS].line, `${questions.length} 題，最多 ${MAX_QUESTIONS} 題`);
+      fail(questions[MAX_QUESTIONS].line, `${questions.length} questions; at most ${MAX_QUESTIONS}`);
     }
     errors.sort((a, b) => a.line - b.line);
     return { maps, questions, details, hook: hook || '', errors };

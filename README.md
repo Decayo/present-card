@@ -33,7 +33,8 @@ hook: 回覆用的 webhook，沒有就留空
 
 - A node is a phrase, not a sentence: no sentence punctuation, and a word limit per
   layer (3, 4, 5, then 6; two CJK characters count as one word).
-- A root has 3 to 7 branches. Any other node has no children, or 2 to 5.
+- A root has 3 to 7 branches, and each branch has 2 to 5 children. A deeper node has no
+  children, or 2 to 5.
 - A map has at most 40 nodes.
 - At most 4 questions. Each has 3 or 4 options; a yes-or-no question has exactly 2.
 - A card with questions has a `hook:` line.

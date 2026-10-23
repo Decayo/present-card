@@ -67,7 +67,7 @@
     const source = document.querySelector('script[type="text/card"]');
     if (!source) throw new Error('找不到 <script type="text/card">');
     const card = window.presentCard.parse(source.textContent.replace(/^\r?\n/, ''));
-    for (const { line, message } of card.errors) console.error(`present-card ${line ? `第 ${line} 行：` : ''}${message}`);
+    for (const { line, message } of card.errors) console.error(`present-card ${line ? `line ${line}: ` : ''}${message}`);
 
     const main = el('main', 'card');
     const sections = card.maps.map(() => main.appendChild(el('section', 'map')));
