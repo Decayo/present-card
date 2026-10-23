@@ -1,0 +1,58 @@
+/* The closing card's look. Colours and fonts come from the theme variables T3 sets on :root. */
+[hidden] { display: none !important; }
+.card { display: grid; gap: 16px; font-family: var(--font-sans); color: var(--foreground); }
+.card .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 40px 0 0; }
+.card .hint { flex: 1; min-width: 0; margin: 0; font-size: 12px; color: var(--muted-foreground); }
+.card button {
+  display: inline-flex; align-items: center; gap: 6px;
+  font: 12px/1 var(--font-sans); padding: 5px 10px; border: 1px solid var(--border);
+  border-radius: 999px; background: var(--secondary); color: var(--secondary-foreground); cursor: pointer;
+}
+.card button:hover { border-color: var(--ring); }
+.card button:disabled { opacity: .5; cursor: default; }
+.card .map { overflow-x: auto; }
+.card svg.markmap {
+  display: block; width: 100%; height: 160px;
+  --markmap-text-color: var(--foreground);
+  --markmap-a-color: var(--info);
+  --markmap-a-hover-color: var(--info);
+  --markmap-code-bg: var(--code-background);
+  --markmap-code-color: var(--code-foreground);
+  --markmap-circle-open-bg: var(--background);
+  --markmap-font: 400 14px/20px var(--font-sans);
+}
+.card .fatal, .card .warn { margin: 0; font-size: 13px; line-height: 1.45; color: var(--destructive, #ef4444); }
+.card .decide { display: grid; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border); }
+.card .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.card .head h2 { margin: 0; font-size: 14px; font-weight: 600; }
+.card .status { font-size: 12px; color: var(--muted-foreground); }
+.card .status.ok { color: var(--success, #22c55e); }
+.card .status.err { color: var(--destructive, #ef4444); }
+.card .qs { display: grid; gap: 12px; }
+.card .q { display: grid; gap: 6px; }
+.card .q h3 { margin: 0; font-size: 13px; font-weight: 600; }
+.card .q h3 small { margin-left: 6px; font-size: 12px; font-weight: 400; color: var(--muted-foreground); }
+.card .opts { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.card .opt { font-size: 13px; line-height: 1.2; padding: 6px 11px; }
+.card .opt::before {
+  content: ""; flex: none; width: 10px; height: 10px; box-sizing: border-box;
+  border: 1.5px solid currentColor; border-radius: 50%; opacity: .55;
+}
+.card .multi .opt::before { border-radius: 2px; }
+.card .opt[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
+.card .opt[aria-pressed="true"]::before { opacity: 1; background: currentColor; }
+.card .send { justify-self: start; font-size: 13px; padding: 7px 16px; background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
+.card .note { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }
+.card .note textarea {
+  font: 13px/1.5 var(--font-sans); color: var(--foreground); background: transparent;
+  border: 1px solid var(--border); border-radius: var(--radius, 8px); padding: 8px 10px;
+  min-height: 56px; resize: vertical; box-sizing: border-box; width: 100%;
+}
+.card .note textarea:focus { outline: none; border-color: var(--ring); }
+.card .note textarea:disabled { opacity: .6; }
+.card .more { font-size: 13px; color: var(--muted-foreground); padding-top: 10px; border-top: 1px solid var(--border); }
+.card .more summary { cursor: pointer; width: max-content; }
+.card .more ul { display: grid; gap: 4px; margin: 8px 0 0; padding-left: 18px; }
+.card .more a { color: var(--info); overflow-wrap: anywhere; }
+.card .more code, .card .markmap code { font-family: var(--font-mono); }
+.card .more code { font-size: 12px; padding: 1px 4px; border-radius: 4px; background: var(--code-background); color: var(--code-foreground); }
