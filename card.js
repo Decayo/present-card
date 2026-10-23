@@ -35,6 +35,9 @@
     load('https://cdn.jsdelivr.net/npm/markmap-view@0.18.12/dist/browser/index.js'),
     style,
   ]);
+  // Handled where the maps are drawn; this only keeps a failed parser load from also
+  // reporting an unhandled rejection.
+  mapsLoaded.catch(() => {});
   const ready = new Promise((resolve) => {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', resolve, { once: true });
     else resolve();
@@ -91,7 +94,7 @@
     const expand = el('button', '', '全部展開');
     const collapse = el('button', '', narrow ? '折疊到第二層' : '折疊到第三層');
     expand.type = collapse.type = 'button';
-    bar.append(el('p', 'hint', `點圓點展開或收起，${MAC ? '⌘' : 'Ctrl'}+點連子節點一起；按 e 全部展開、c 折疊`), expand, collapse);
+    bar.append(el('p', 'hint', `點圓點展開收起，${MAC ? '⌘' : 'Ctrl'}+點整個分支；按 e 展開、c 折疊`), expand, collapse);
     main.prepend(bar);
 
     const maps = await Promise.all(roots.map((root, i) => drawMap(sections[i], root, { level, narrow, palette })));
@@ -111,7 +114,7 @@
       const target = event.target;
       if (event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return;
       if (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
-      const key = event.key.toLowerCase();
+      const key = (event.key || '').toLowerCase();
       if (key === 'e') foldAll(0);
       else if (key === 'c') foldAll(level);
       else return;
